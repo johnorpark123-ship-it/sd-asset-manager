@@ -316,10 +316,13 @@ const firebaseConfig = {
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data !== null) {
-                    // 데이터가 명시적으로 존재하면 빈 배열([])이라도 그대로 반영 (초기값으로 안 튕김)
-                    allRows = Array.isArray(data) ? data : [];
+                    // 만약 "EMPTY_STATE" 문자열이 들어있거나 배열이 아니면 실제 화면에서는 빈 리스트([])로 처리
+                    if (Array.isArray(data) && data.length > 0 && data[0] !== "EMPTY_STATE") {
+                        allRows = data;
+                    } else {
+                        allRows = [];
+                    }
                 } else {
-                    // 최초 접속 시(DB에 아예 데이터가 없을 때만) 기본 데이터 설정
                     allRows = [];
                 }
                 renderAll();
@@ -600,7 +603,14 @@ const firebaseConfig = {
         window.deleteRow = function(index) {
             if (confirm('정말 이 SD카드 자산을 장부에서 삭제하시겠습니까?')) {
                 allRows.splice(index, 1);
-                saveToFirebase(); // 모든 항목을 다 지워도 빈 배열([]) 상태로 반영됨
+                
+                // 만약 모든 항목이 다 지워져서 비어버린 경우
+                if (allRows.length === 0) {
+                    // 파이어베이스가 null로 지워버리지 못하도록 빈 배열 대신 빈 상태 객체나 더미를 저장
+                    set(ref(db, 'sd_card_ledger'), ["EMPTY_STATE"]);
+                } else {
+                    saveToFirebase();
+                }
                 renderAll();
             }
         };

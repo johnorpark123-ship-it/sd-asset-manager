@@ -162,7 +162,7 @@
             <!-- Empty Search State -->
             <div id="empty-search" class="hidden p-16 text-center text-slate-500 text-sm flex flex-col items-center justify-center space-y-2">
                 <i class="fa-regular fa-folder-open text-3xl text-slate-300"></i>
-                <p>조건과 일치하는 SD카드가 없습니다.</p>
+                <p>등록된 SD카드가 없거나 조건과 일치하는 항목이 없습니다.</p>
             </div>
         </div>
     </main>
@@ -274,22 +274,23 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 아래 영역에 본인의 Firebase 설정값(Step 2에서 복사한 내용)을 붙여넣으세요.
+        // 🔥 본인의 Firebase 설정값 입력
         const firebaseConfig = {
-  apiKey: "AIzaSyBANvp_Se4n59yHcT9JvXyE-KN7cRIz_Go",
-  authDomain: "sd-asset-manager.firebaseapp.com",
-  databaseURL: "https://sd-asset-manager-default-rtdb.firebaseio.com",
-  projectId: "sd-asset-manager",
-  storageBucket: "sd-asset-manager.firebasestorage.app",
-  messagingSenderId: "568250820087",
-  appId: "1:568250820087:web:8f6dd508ec9421b1673af2",
-  measurementId: "G-W8WEJ04501"
-};
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         let allRows = [];
+        let actionHistory = [];
+        const MAX_HISTORY = 100; // 이력 최대 100개 유지, 초과 시 자동 삭제
         let headers = ["관리번호", "SD카드 모델명", "용량", "상태", "장착 장비", "담당자", "업데이트 날짜"];
         let currentStatusFilter = 'all';
 
@@ -306,27 +307,49 @@
             ["SD-010", "Kingston Canvas Go!", "64GB", "분실", "미확인", "박미확인", "2026-06-02"]
         ];
 
-        // Firebase Realtime Database 실시간 데이터 수신 리스너
         window.onload = function() {
             const dbRef = ref(db, 'sd_card_ledger');
+            const historyRef = ref(db, 'sd_card_history');
+
+            // 실시간 자산 목록 동기화
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
-                if (data) {
-                    allRows = data;
+                if (data !== null) {
+                    // 데이터가 명시적으로 존재하면 빈 배열([])이라도 그대로 반영 (초기값으로 안 튕김)
+                    allRows = Array.isArray(data) ? data : [];
                 } else {
+                    // 최초 접속 시(DB에 아예 데이터가 없을 때만) 기본 데이터 설정
                     allRows = defaultData;
                     saveToFirebase();
                 }
                 renderAll();
             });
+
+            // 히스토리 목록 동기화
+            onValue(historyRef, (snapshot) => {
+                const hData = snapshot.val();
+                if (hData !== null && Array.isArray(hData)) {
+                    actionHistory = hData;
+                }
+            });
         };
 
-        // Firebase에 데이터 저장하는 함수
         function saveToFirebase() {
             set(ref(db, 'sd_card_ledger'), allRows)
                 .catch((error) => {
                     console.error("데이터 저장 실패: ", error);
                 });
+        }
+
+        // 히스토리 추가 및 100개 초과 시 자동 삭제(pop) 로직
+        function addHistoryLog(cardId, action, manager, date) {
+            actionHistory.unshift({ cardId, action, manager, date });
+            if (actionHistory.length > MAX_HISTORY) {
+                actionHistory.pop(); // 가장 오래된 이력 자동 삭제
+            }
+            set(ref(db, 'sd_card_history'), actionHistory).catch((error) => {
+                console.error("히스토리 저장 실패: ", error);
+            });
         }
 
         function renderAll() {
@@ -365,18 +388,14 @@
 
         window.setStatusFilter = function(status) {
             currentStatusFilter = status;
-            
             ['all', '사용가능', '사용중', '불량', '분실'].forEach(s => {
                 const btn = document.getElementById(`filter-btn-${s}`);
                 if (btn) {
-                    if (s === status) {
-                        btn.className = 'px-3 py-1.5 rounded-lg bg-white text-slate-900 font-semibold shadow-sm transition whitespace-nowrap';
-                    } else {
-                        btn.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap';
-                    }
+                    btn.className = (s === status) 
+                        ? 'px-3 py-1.5 rounded-lg bg-white text-slate-900 font-semibold shadow-sm transition whitespace-nowrap'
+                        : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap';
                 }
             });
-
             applyFilters();
         };
 
@@ -452,7 +471,6 @@
                 headers.forEach((_, colIndex) => {
                     let td = document.createElement('td');
                     td.className = 'px-6 py-4 whitespace-nowrap text-slate-700 text-xs sm:text-sm';
-                    
                     let cellVal = row[colIndex] !== undefined ? row[colIndex] : '';
 
                     if (colIndex === 3 && cellVal) {
@@ -470,7 +488,6 @@
                     } else {
                         td.innerText = cellVal;
                     }
-
                     tr.appendChild(td);
                 });
 
@@ -486,7 +503,6 @@
                     </button>
                 `;
                 tr.appendChild(actionTd);
-
                 bodyEl.appendChild(tr);
             });
         }
@@ -500,15 +516,12 @@
             document.getElementById('modal-manager').value = row[5] || '';
             
             let existingDate = row[6] || '';
-            if (existingDate.includes(' ')) {
-                existingDate = existingDate.split(' ')[0];
-            }
+            if (existingDate.includes(' ')) existingDate = existingDate.split(' ')[0];
             if (!existingDate) {
                 const now = new Date();
                 existingDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             }
             document.getElementById('modal-date').value = existingDate;
-
             document.getElementById('action-modal').classList.remove('hidden');
         };
 
@@ -533,12 +546,18 @@
             
             if (index >= 0 && index < allRows.length) {
                 while(allRows[index].length < 7) allRows[index].push('');
-                allRows[index][3] = document.getElementById('modal-status').value;
-                allRows[index][4] = document.getElementById('modal-location').value;
-                allRows[index][5] = document.getElementById('modal-manager').value;
-                allRows[index][6] = document.getElementById('modal-date').value;
+                const cardId = allRows[index][0];
+                const newStatus = document.getElementById('modal-status').value;
+                const manager = document.getElementById('modal-manager').value;
+                const dateStr = document.getElementById('modal-date').value;
 
-                saveToFirebase(); // Firebase에 즉시 반영 (실시간 동기화)
+                allRows[index][3] = newStatus;
+                allRows[index][4] = document.getElementById('modal-location').value;
+                allRows[index][5] = manager;
+                allRows[index][6] = dateStr;
+
+                addHistoryLog(cardId, newStatus, manager, dateStr);
+                saveToFirebase();
                 renderAll();
                 closeModal();
             }
@@ -573,7 +592,7 @@
             ];
 
             allRows.unshift(newRow);
-            saveToFirebase(); // Firebase에 즉시 반영 (실시간 동기화)
+            saveToFirebase();
             renderAll();
             closeAddModal();
         };
@@ -581,7 +600,7 @@
         window.deleteRow = function(index) {
             if (confirm('정말 이 SD카드 자산을 장부에서 삭제하시겠습니까?')) {
                 allRows.splice(index, 1);
-                saveToFirebase(); // Firebase에 즉시 반영 (실시간 동기화)
+                saveToFirebase(); // 모든 항목을 다 지워도 빈 배열([]) 상태로 반영됨
                 renderAll();
             }
         };

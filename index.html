@@ -275,15 +275,16 @@
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // 🔥 본인의 Firebase 설정값 입력
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+const firebaseConfig = {
+  apiKey: "AIzaSyBANvp_Se4n59yHcT9JvXyE-KN7cRIz_Go",
+  authDomain: "sd-asset-manager.firebaseapp.com",
+  databaseURL: "https://sd-asset-manager-default-rtdb.firebaseio.com",
+  projectId: "sd-asset-manager",
+  storageBucket: "sd-asset-manager.firebasestorage.app",
+  messagingSenderId: "568250820087",
+  appId: "1:568250820087:web:8f6dd508ec9421b1673af2",
+  measurementId: "G-W8WEJ04501"
+};
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);

@@ -139,7 +139,7 @@
                 </div>
                 <div class="text-xs text-emerald-600 font-medium hidden sm:flex items-center space-x-1">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>실시간 동기화 활성화됨 (헤더 클릭 시 정렬)</span>
+                    <span>실시간 동기화 활성화됨 (헤더 클릭: 오름차순 ➡️ 내림차순 ➡️ 기본보기)</span>
                 </div>
             </div>
 
@@ -270,14 +270,14 @@
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
-              apiKey: "AIzaSyBANvp_Se4n59yHcT9JvXyE-KN7cRIz_Go",
-              authDomain: "sd-asset-manager.firebaseapp.com",
-              databaseURL: "https://sd-asset-manager-default-rtdb.firebaseio.com",
-              projectId: "sd-asset-manager",
-              storageBucket: "sd-asset-manager.firebasestorage.app",
-              messagingSenderId: "568250820087",
-              appId: "1:568250820087:web:8f6dd508ec9421b1673af2",
-              measurementId: "G-W8WEJ04501"
+                  apiKey: "AIzaSyBANvp_Se4n59yHcT9JvXyE-KN7cRIz_Go",
+                  authDomain: "sd-asset-manager.firebaseapp.com",
+                  databaseURL: "https://sd-asset-manager-default-rtdb.firebaseio.com",
+                  projectId: "sd-asset-manager",
+                  storageBucket: "sd-asset-manager.firebasestorage.app",
+                  messagingSenderId: "568250820087",
+                  appId: "1:568250820087:web:8f6dd508ec9421b1673af2",
+                  measurementId: "G-W8WEJ04501"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -289,7 +289,7 @@
         let headers = ["관리번호", "SD카드 모델명", "용량", "상태", "장착 장비", "담당자", "업데이트 날짜"];
         let currentStatusFilter = 'all';
 
-        // 정렬 상태 변수
+        // 정렬 상태 변수 (3단계: asc -> desc -> null)
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
 
@@ -384,9 +384,15 @@
             window.setStatusFilter('all');
         };
 
+        // 3단계 정렬 토글 (오름차순 -> 내림차순 -> 기본보기 해제)
         window.sortTable = function(colIndex) {
             if (currentSortColumn === colIndex) {
-                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                if (currentSortDirection === 'asc') {
+                    currentSortDirection = 'desc';
+                } else if (currentSortDirection === 'desc') {
+                    currentSortColumn = null; // 기본보기로 복귀
+                    currentSortDirection = 'asc';
+                }
             } else {
                 currentSortColumn = colIndex;
                 currentSortDirection = 'asc';
@@ -418,6 +424,7 @@
                 return matchesSearch && matchesStatus;
             });
 
+            // 정렬 적용 또는 기본보기(업데이트 날짜 최신순)
             if (currentSortColumn !== null) {
                 filtered.sort((a, b) => {
                     let valA = a.row[currentSortColumn] !== undefined ? String(a.row[currentSortColumn]).toLowerCase() : '';
@@ -426,6 +433,13 @@
                     if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
                     if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
                     return 0;
+                });
+            } else {
+                // 기본보기: 업데이트 날짜(인덱스 6) 기준 최신순 정렬
+                filtered.sort((a, b) => {
+                    let dateA = a.row[6] || '';
+                    let dateB = b.row[6] || '';
+                    return dateB.localeCompare(dateA);
                 });
             }
 
@@ -459,7 +473,11 @@
                 
                 let arrow = '';
                 if (currentSortColumn === index) {
-                    arrow = currentSortDirection === 'asc' ? ' <i class="fa-solid fa-arrow-up text-blue-600 text-[10px]"></i>' : ' <i class="fa-solid fa-arrow-down text-blue-600 text-[10px]"></i>';
+                    if (currentSortDirection === 'asc') {
+                        arrow = ' <i class="fa-solid fa-arrow-up text-blue-600 text-[10px]"></i>';
+                    } else if (currentSortDirection === 'desc') {
+                        arrow = ' <i class="fa-solid fa-arrow-down text-blue-600 text-[10px]"></i>';
+                    }
                 }
                 th.innerHTML = `${header}${arrow}`;
                 th.onclick = () => sortTable(index);

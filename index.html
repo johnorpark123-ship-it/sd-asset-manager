@@ -16,6 +16,8 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background-color: #e2e8f0; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased selection:bg-blue-600 selection:text-white">
@@ -47,7 +49,6 @@
         
         <!-- Summary Stats Grid -->
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- Total Cards -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">전체 등록 카드</span>
@@ -59,7 +60,6 @@
                 </div>
             </div>
 
-            <!-- Available/Ready Cards -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">사용 가능 / 여유</span>
@@ -71,7 +71,6 @@
                 </div>
             </div>
 
-            <!-- In Use / Borrowed Cards -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider">대여중 / 사용중</span>
@@ -83,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- Faulty Cards -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <span class="text-xs font-semibold text-rose-600 uppercase tracking-wider">점검 필요 / 불량</span>
@@ -95,7 +93,6 @@
                 </div>
             </div>
 
-            <!-- Lost Cards -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between col-span-2 lg:col-span-1">
                 <div>
                     <span class="text-xs font-semibold text-purple-600 uppercase tracking-wider">분실 / 미확인</span>
@@ -118,7 +115,6 @@
             </div>
 
             <div class="w-full md:w-auto flex flex-wrap items-center justify-between sm:justify-start gap-2">
-                <!-- Status Filter Pills -->
                 <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium w-full sm:w-auto overflow-x-auto">
                     <button onclick="setStatusFilter('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-lg bg-white text-slate-800 shadow-sm transition whitespace-nowrap">전체보기</button>
                     <button onclick="setStatusFilter('사용가능')" id="filter-btn-사용가능" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap">사용가능</button>
@@ -143,7 +139,7 @@
                 </div>
                 <div class="text-xs text-emerald-600 font-medium hidden sm:flex items-center space-x-1">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>실시간 동기화 활성화됨</span>
+                    <span>실시간 동기화 활성화됨 (헤더 클릭 시 정렬)</span>
                 </div>
             </div>
 
@@ -159,7 +155,6 @@
                 </table>
             </div>
             
-            <!-- Empty Search State -->
             <div id="empty-search" class="hidden p-16 text-center text-slate-500 text-sm flex flex-col items-center justify-center space-y-2">
                 <i class="fa-regular fa-folder-open text-3xl text-slate-300"></i>
                 <p>등록된 SD카드가 없거나 조건과 일치하는 항목이 없습니다.</p>
@@ -274,61 +269,44 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 🔥 본인의 Firebase 설정값 입력
-const firebaseConfig = {
-  apiKey: "AIzaSyBANvp_Se4n59yHcT9JvXyE-KN7cRIz_Go",
-  authDomain: "sd-asset-manager.firebaseapp.com",
-  databaseURL: "https://sd-asset-manager-default-rtdb.firebaseio.com",
-  projectId: "sd-asset-manager",
-  storageBucket: "sd-asset-manager.firebasestorage.app",
-  messagingSenderId: "568250820087",
-  appId: "1:568250820087:web:8f6dd508ec9421b1673af2",
-  measurementId: "G-W8WEJ04501"
-};
+        const firebaseConfig = {
+              apiKey: "AIzaSyBANvp_Se4n59yHcT9JvXyE-KN7cRIz_Go",
+              authDomain: "sd-asset-manager.firebaseapp.com",
+              databaseURL: "https://sd-asset-manager-default-rtdb.firebaseio.com",
+              projectId: "sd-asset-manager",
+              storageBucket: "sd-asset-manager.firebasestorage.app",
+              messagingSenderId: "568250820087",
+              appId: "1:568250820087:web:8f6dd508ec9421b1673af2",
+              measurementId: "G-W8WEJ04501"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
         let allRows = [];
         let actionHistory = [];
-        const MAX_HISTORY = 100; // 이력 최대 100개 유지, 초과 시 자동 삭제
+        const MAX_HISTORY = 100;
         let headers = ["관리번호", "SD카드 모델명", "용량", "상태", "장착 장비", "담당자", "업데이트 날짜"];
         let currentStatusFilter = 'all';
 
-        const defaultData = [
-            ["SD-001", "SanDisk Extreme Pro", "128GB", "사용중", "카메라 A", "김철수", "2026-06-07"],
-            ["SD-002", "Samsung EVO Plus", "256GB", "사용가능", "보관함 1번", "-", "2026-06-06"],
-            ["SD-003", "Lexar Professional", "64GB", "불량", "점검실", "박민수", "2026-06-05"],
-            ["SD-004", "SanDisk Ultra", "128GB", "사용중", "드론 #2", "정우성", "2026-06-07"],
-            ["SD-005", "Transcend High Endurance", "64GB", "사용가능", "보관함 2번", "-", "2026-06-01"],
-            ["SD-006", "Sony TOUGH Specification", "128GB", "사용중", "메인 캠코더", "이지은", "2026-06-07"],
-            ["SD-007", "SanDisk Extreme", "64GB", "사용가능", "보관함 1번", "-", "2026-06-04"],
-            ["SD-008", "Samsung PRO Plus", "256GB", "사용중", "서브 카메라", "김철수", "2026-06-07"],
-            ["SD-009", "Lexar Silver Pro", "128GB", "사용가능", "보관함 3번", "-", "2026-06-03"],
-            ["SD-010", "Kingston Canvas Go!", "64GB", "분실", "미확인", "박미확인", "2026-06-02"]
-        ];
+        // 정렬 상태 변수
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
 
         window.onload = function() {
             const dbRef = ref(db, 'sd_card_ledger');
             const historyRef = ref(db, 'sd_card_history');
 
-            // 실시간 자산 목록 동기화
             onValue(dbRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data !== null) {
-                    // 만약 "EMPTY_STATE" 문자열이 들어있거나 배열이 아니면 실제 화면에서는 빈 리스트([])로 처리
-                    if (Array.isArray(data) && data.length > 0 && data[0] !== "EMPTY_STATE") {
-                        allRows = data;
-                    } else {
-                        allRows = [];
-                    }
+                    allRows = Array.isArray(data) ? data : [];
                 } else {
                     allRows = [];
                 }
                 renderAll();
             });
 
-            // 히스토리 목록 동기화
             onValue(historyRef, (snapshot) => {
                 const hData = snapshot.val();
                 if (hData !== null && Array.isArray(hData)) {
@@ -344,11 +322,10 @@ const firebaseConfig = {
                 });
         }
 
-        // 히스토리 추가 및 100개 초과 시 자동 삭제(pop) 로직
         function addHistoryLog(cardId, action, manager, date) {
             actionHistory.unshift({ cardId, action, manager, date });
             if (actionHistory.length > MAX_HISTORY) {
-                actionHistory.pop(); // 가장 오래된 이력 자동 삭제
+                actionHistory.pop();
             }
             set(ref(db, 'sd_card_history'), actionHistory).catch((error) => {
                 console.error("히스토리 저장 실패: ", error);
@@ -407,10 +384,20 @@ const firebaseConfig = {
             window.setStatusFilter('all');
         };
 
+        window.sortTable = function(colIndex) {
+            if (currentSortColumn === colIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = colIndex;
+                currentSortDirection = 'asc';
+            }
+            applyFilters();
+        };
+
         window.applyFilters = function() {
             const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
 
-            const filtered = allRows.map((row, originalIndex) => ({ row, originalIndex })).filter(({ row }) => {
+            let filtered = allRows.map((row, originalIndex) => ({ row, originalIndex })).filter(({ row }) => {
                 const matchesSearch = !searchQuery || row.some(cell => String(cell).toLowerCase().includes(searchQuery));
 
                 let matchesStatus = true;
@@ -430,6 +417,17 @@ const firebaseConfig = {
 
                 return matchesSearch && matchesStatus;
             });
+
+            if (currentSortColumn !== null) {
+                filtered.sort((a, b) => {
+                    let valA = a.row[currentSortColumn] !== undefined ? String(a.row[currentSortColumn]).toLowerCase() : '';
+                    let valB = b.row[currentSortColumn] !== undefined ? String(b.row[currentSortColumn]).toLowerCase() : '';
+
+                    if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
 
             renderTable(filtered);
         };
@@ -455,12 +453,19 @@ const firebaseConfig = {
             emptySearch.classList.add('hidden');
 
             let headerTr = document.createElement('tr');
-            headers.forEach((header) => {
+            headers.forEach((header, index) => {
                 let th = document.createElement('th');
-                th.className = 'px-6 py-3.5 font-semibold text-slate-600 whitespace-nowrap bg-slate-50';
-                th.innerText = header;
+                th.className = 'px-6 py-3.5 font-semibold text-slate-600 whitespace-nowrap bg-slate-50 sortable';
+                
+                let arrow = '';
+                if (currentSortColumn === index) {
+                    arrow = currentSortDirection === 'asc' ? ' <i class="fa-solid fa-arrow-up text-blue-600 text-[10px]"></i>' : ' <i class="fa-solid fa-arrow-down text-blue-600 text-[10px]"></i>';
+                }
+                th.innerHTML = `${header}${arrow}`;
+                th.onclick = () => sortTable(index);
                 headerTr.appendChild(th);
             });
+
             let actionTh = document.createElement('th');
             actionTh.className = 'px-6 py-3.5 font-semibold text-slate-600 whitespace-nowrap bg-slate-50 text-right';
             actionTh.innerText = '대여/반납 관리';
@@ -601,17 +606,17 @@ const firebaseConfig = {
         };
 
         window.deleteRow = function(index) {
-            if (confirm('정말 이 SD카드 자산을 장부에서 삭제하시겠습니까?')) {
-                allRows.splice(index, 1);
-                
-                // 만약 모든 항목이 다 지워져서 비어버린 경우
-                if (allRows.length === 0) {
-                    // 파이어베이스가 null로 지워버리지 못하도록 빈 배열 대신 빈 상태 객체나 더미를 저장
-                    set(ref(db, 'sd_card_ledger'), ["EMPTY_STATE"]);
-                } else {
+            const password = prompt('자산을 삭제하려면 관리자 비밀번호를 입력하세요:');
+            if (password === null) return;
+
+            if (password === '1234') {
+                if (confirm('정말 이 SD카드 자산을 장부에서 영구 삭제하시겠습니까?')) {
+                    allRows.splice(index, 1);
                     saveToFirebase();
+                    renderAll();
                 }
-                renderAll();
+            } else {
+                alert('비밀번호가 틀렸습니다. 삭제할 수 없습니다.');
             }
         };
     </script>

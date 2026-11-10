@@ -7,9 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- 기존 엑셀 파싱 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- 신규: 엑셀 데이터 유효성 검사(드롭다운) 생성을 위한 ExcelJS 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -601,10 +599,16 @@
             document.getElementById('action-modal').classList.remove('hidden');
         };
         window.closeModal = function() { document.getElementById('action-modal').classList.add('hidden'); };
+        
+        /* [수정됨] 상태를 '사용가능'으로 바꾸면 매니저와 위치 모두 하이픈(-)으로 처리 */
         window.onActionStatusChange = function() {
-            if (document.getElementById('action-status').value === '사용가능') document.getElementById('action-manager').value = '-';
+            if (document.getElementById('action-status').value === '사용가능') {
+                document.getElementById('action-manager').value = '-';
+                document.getElementById('action-location').value = '-';
+            }
             document.getElementById('action-date').value = new Date().toISOString().split('T')[0];
         };
+        
         window.handleActionSubmit = function(e) {
             e.preventDefault();
             const index = parseInt(document.getElementById('action-row-id').value);
@@ -697,9 +701,14 @@
                 if(newCap !== '') { allRows[idx][3] = newCap; updated = true; }
                 if(newManager !== '') { allRows[idx][7] = newManager; updated = true; }
                 if(newLoc !== '') { allRows[idx][6] = newLoc; updated = true; }
+                
+                /* [수정됨] 일괄수정에서도 상태가 '사용가능'으로 변경되면 위치도 비우기 적용 */
                 if(newStatus !== '') { 
                     allRows[idx][5] = newStatus; 
-                    if(newStatus === '사용가능' && newManager === '') allRows[idx][7] = '-'; 
+                    if(newStatus === '사용가능') {
+                        if(newManager === '') allRows[idx][7] = '-'; 
+                        if(newLoc === '') allRows[idx][6] = '-'; 
+                    }
                     addHistoryLog(allRows[idx][0], "일괄상태: " + newStatus, allRows[idx][7], newDate);
                     updated = true;
                 }

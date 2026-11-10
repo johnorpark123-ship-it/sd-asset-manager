@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zesq 저장장치 통합 자산관리 시스템 - 스마트 대여 및 재고관리</title>
+    <title>Zesq 통합 자산관리 시스템 - 스마트 대여 및 재고관리</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-base sm:text-lg text-slate-950 tracking-tight flex items-center space-x-2">
-                        <span>Zesq 저장장치 통합 자산관리 시스템</span>
+                        <span>Zesq 통합 자산관리 시스템</span>
                     </h1>
                 </div>
             </div>
@@ -52,6 +52,9 @@
                 <button onclick="openHistoryModal()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-clock-rotate-left"></i><span>이력</span>
                 </button>
+                <button onclick="openCategoryModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-tags"></i><span>분류 설정</span>
+                </button>
                 <button onclick="openAdminModal()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-gears"></i><span>자산 정보 관리</span>
                 </button>
@@ -66,7 +69,7 @@
         <!-- 상단 상태 통계 카드 -->
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 select-none">
             <div id="stat-card-all" onclick="setStatusFilter('all')" class="stat-card bg-white p-4 sm:p-5 rounded-2xl border-blue-500 shadow-sm flex items-center justify-between">
-                <div><span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">전체 등록 장치</span><h2 class="text-2xl sm:text-3xl font-bold text-slate-950 mt-1" id="stat-total">-</h2></div>
+                <div><span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">전체 검색 결과</span><h2 class="text-2xl sm:text-3xl font-bold text-slate-950 mt-1" id="stat-total">-</h2></div>
                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-lg shadow-inner"><i class="fa-solid fa-database"></i></div>
             </div>
             <div id="stat-card-사용가능" onclick="setStatusFilter('사용가능')" class="stat-card bg-white p-4 sm:p-5 rounded-2xl border-slate-200 hover:border-emerald-300 shadow-sm flex items-center justify-between">
@@ -94,12 +97,8 @@
             </div>
 
             <div class="w-full lg:w-auto flex flex-wrap items-center justify-between sm:justify-start gap-2">
-                <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium w-full sm:w-auto overflow-x-auto">
-                    <button onclick="setTypeFilter('all')" id="type-btn-all" class="px-3 py-1.5 rounded-lg bg-white text-slate-900 font-semibold shadow-sm transition whitespace-nowrap">전체보기</button>
-                    <button onclick="setTypeFilter('MicroSD')" id="type-btn-MicroSD" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap">MicroSD</button>
-                    <button onclick="setTypeFilter('HDD')" id="type-btn-HDD" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap">HDD</button>
-                    <button onclick="setTypeFilter('USB')" id="type-btn-USB" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap">USB</button>
-                    <button onclick="setTypeFilter('기타')" id="type-btn-기타" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap">기타</button>
+                <div id="type-filter-container" class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium w-full sm:w-auto overflow-x-auto">
+                    <!-- Firebase 연동을 통해 동적으로 렌더링 됩니다 -->
                 </div>
                 <button onclick="resetFilters()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2.5 rounded-xl transition flex items-center space-x-1.5"><i class="fa-solid fa-rotate-left"></i><span>초기화</span></button>
             </div>
@@ -109,7 +108,7 @@
             <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
                 <div class="flex items-center space-x-2">
                     <i class="fa-solid fa-list-check text-blue-600"></i>
-                    <h3 class="font-semibold text-slate-800">전체 저장장치 자산 목록</h3>
+                    <h3 class="font-semibold text-slate-800">자산 목록</h3>
                     <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-semibold" id="table-row-count">0개</span>
                 </div>
                 <div class="text-xs text-slate-400">헤더 클릭: 오름차순(▲) ➡️ 내림차순(▼)</div>
@@ -127,7 +126,33 @@
         </div>
     </main>
 
-    <!-- 1. 메인 리스트용: 대여/반납 전용 모달 (개별 장치 최근 히스토리 좌우 비교 뷰) -->
+    <!-- [신규] 장치 카테고리 관리 모달 -->
+    <div id="category-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-tags text-indigo-600"></i>
+                    <span>장치 종류 설정</span>
+                </h3>
+                <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="flex gap-2">
+                <input type="text" id="new-category-input" placeholder="새 종류 입력 (예: RAM)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                <button onclick="addCategory()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition whitespace-nowrap">추가</button>
+            </div>
+
+            <div class="max-h-60 overflow-y-auto space-y-2 pt-2 border-t border-slate-100" id="category-list">
+                <!-- JS 렌더링 -->
+            </div>
+
+            <div class="text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                ※ 장치 종류를 삭제해도 기존에 등록된 자산 데이터는 유지됩니다. 삭제된 카테고리의 자산은 수동으로 다른 종류로 변경해야 합니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. 메인 리스트용: 대여/반납 전용 모달 -->
     <div id="action-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-100 max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
@@ -141,7 +166,6 @@
                     <div id="action-device-info" class="text-sm font-bold text-slate-800"></div>
                 </div>
 
-                <!-- [개선] 해당 장치 최근 10개 히스토리 (좌우 비교형) -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
                         <span><i class="fa-solid fa-clock-rotate-left text-amber-600 mr-1"></i>해당 장치 최근 변경 이력 (최근 10개)</span>
@@ -199,11 +223,7 @@
                 <input type="text" id="admin-search" oninput="renderAdminList()" placeholder="관리번호, 모델명, 담당자 내부 검색..." class="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <div class="flex gap-2">
                     <select id="admin-type-filter" onchange="renderAdminList()" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none bg-white">
-                        <option value="all">모든 종류</option>
-                        <option value="MicroSD">MicroSD</option>
-                        <option value="HDD">HDD</option>
-                        <option value="USB">USB 메모리</option>
-                        <option value="기타">기타 저장장치</option>
+                        <!-- 동적 렌더링 -->
                     </select>
                     <button onclick="openBulkEditModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm transition whitespace-nowrap">
                         <i class="fa-solid fa-pen-to-square mr-1"></i>선택 일괄수정
@@ -251,11 +271,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">장치 종류</label>
                         <select id="bulk-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <option value="">변경 안 함</option>
-                            <option value="MicroSD">MicroSD</option>
-                            <option value="USB">USB 메모리</option>
-                            <option value="HDD">HDD (외장/내장)</option>
-                            <option value="기타">기타 저장장치</option>
+                            <!-- 동적 렌더링 -->
                         </select>
                     </div>
                     <div>
@@ -308,10 +324,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">장치 종류</label>
                         <select id="core-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="MicroSD">MicroSD</option>
-                            <option value="USB">USB 메모리</option>
-                            <option value="HDD">HDD (외장/내장)</option>
-                            <option value="기타">기타 저장장치</option>
+                            <!-- 동적 렌더링 -->
                         </select>
                     </div>
                 </div>
@@ -353,10 +366,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">장치 종류</label>
                         <select id="add-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="MicroSD">MicroSD</option>
-                            <option value="USB">USB 메모리</option>
-                            <option value="HDD">HDD (외장/내장)</option>
-                            <option value="기타">기타 저장장치</option>
+                            <!-- 동적 렌더링 -->
                         </select>
                     </div>
                 </div>
@@ -402,7 +412,7 @@
         </div>
     </div>
 
-    <!-- [개선] 상단 전체 이력 모달 (좌우 비교형 UI 및 검색 필터 적용) -->
+    <!-- 전체 이력 모달 -->
     <div id="history-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-6 space-y-4 border border-slate-100 flex flex-col max-h-[85vh]">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
@@ -447,6 +457,8 @@
 
         let allRows = [];
         let actionHistory = [];
+        let currentCategories = []; // 동적 카테고리 저장소
+        const defaultCategories = ['MicroSD', 'HDD', 'USB', '기타'];
         const MAX_HISTORY = 100;
         
         let headers = ["관리번호", "장치 종류", "모델명", "용량", "시리얼 넘버", "상태", "장착 장비", "담당자", "업데이트 날짜"];
@@ -457,6 +469,14 @@
         let currentSortDirection = 'asc';
 
         window.onload = function() {
+            // 카테고리 데이터 불러오기
+            onValue(ref(db, 'sd_card_categories'), (snapshot) => {
+                const data = snapshot.val();
+                currentCategories = (data && Array.isArray(data)) ? data : defaultCategories;
+                renderCategoryUI();
+            });
+
+            // 자산 장부 불러오기
             onValue(ref(db, 'sd_card_ledger'), (snapshot) => {
                 const data = snapshot.val();
                 allRows = (data !== null && Array.isArray(data)) ? data : [];
@@ -469,18 +489,102 @@
                     if(row[1] === "SD카드" || row[1] === "SSD" || row[1] === "SSD (외장/내장)") row[1] = "기타";
                     return row;
                 });
-                renderAll();
+                applyFilters();
                 if(!document.getElementById('admin-list-modal').classList.contains('hidden')) { renderAdminList(); }
             });
+
+            // 히스토리 불러오기
             onValue(ref(db, 'sd_card_history'), (snapshot) => {
                 const hData = snapshot.val();
                 if (hData !== null && Array.isArray(hData)) actionHistory = hData;
             });
         };
 
+        // --- 카테고리 동적 렌더링 시스템 ---
+        window.renderCategoryUI = function() {
+            // 1. 메인 필터 버튼 업데이트
+            const filterContainer = document.getElementById('type-filter-container');
+            let btnHtml = `<button onclick="setTypeFilter('all')" id="type-btn-all" class="px-3 py-1.5 rounded-lg bg-white text-slate-900 font-semibold shadow-sm transition whitespace-nowrap">전체보기</button>`;
+            currentCategories.forEach(cat => {
+                btnHtml += `<button onclick="setTypeFilter('${cat}')" id="type-btn-${cat}" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap">${cat}</button>`;
+            });
+            filterContainer.innerHTML = btnHtml;
+            setTypeFilter(currentTypeFilter); // 현재 선택된 필터 스타일 재적용
+
+            // 2. Select 박스 업데이트 (옵션 유지)
+            const selectIds = ['bulk-type', 'core-type', 'add-type', 'admin-type-filter'];
+            selectIds.forEach(id => {
+                const sel = document.getElementById(id);
+                if (sel) {
+                    const currentVal = sel.value;
+                    let opts = id === 'bulk-type' ? `<option value="">변경 안 함</option>` : (id === 'admin-type-filter' ? `<option value="all">모든 종류</option>` : '');
+                    currentCategories.forEach(cat => {
+                        opts += `<option value="${cat}">${cat}</option>`;
+                    });
+                    sel.innerHTML = opts;
+                    if (currentCategories.includes(currentVal) || currentVal === '' || currentVal === 'all') sel.value = currentVal;
+                }
+            });
+        };
+
+        // [수정됨] 팝업 진입 시 비밀번호 제거 (바로 열림)
+        window.openCategoryModal = function() {
+            renderCategoryManager();
+            document.getElementById('category-modal').classList.remove('hidden'); 
+        };
+        window.closeCategoryModal = function() { document.getElementById('category-modal').classList.add('hidden'); };
+
+        window.renderCategoryManager = function() {
+            const list = document.getElementById('category-list');
+            list.innerHTML = '';
+            currentCategories.forEach((cat, idx) => {
+                list.innerHTML += `
+                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-sm font-semibold text-slate-700">${cat}</span>
+                        <button onclick="deleteCategory(${idx})" class="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition font-bold">삭제</button>
+                    </div>
+                `;
+            });
+        };
+
+        // [수정됨] 추가 버튼 누를 때 비밀번호 확인
+        window.addCategory = function() {
+            const input = document.getElementById('new-category-input');
+            const val = input.value.trim();
+            if (!val) return alert("추가할 장치 종류를 입력하세요.");
+            if (currentCategories.includes(val)) return alert("이미 존재하는 종류입니다.");
+            
+            const pwd = prompt("장치 종류를 추가하려면 관리자 비밀번호를 입력하세요:");
+            if (pwd === '1234') {
+                currentCategories.push(val);
+                set(ref(db, 'sd_card_categories'), currentCategories).then(() => {
+                    input.value = '';
+                    renderCategoryManager();
+                });
+            } else if (pwd !== null) { 
+                alert("비밀번호가 틀렸습니다."); 
+            }
+        };
+
+        // [수정됨] 삭제 버튼 누를 때 비밀번호 확인
+        window.deleteCategory = function(idx) {
+            const cat = currentCategories[idx];
+            if (confirm(`'${cat}' 종류를 정말 삭제하시겠습니까?\n(기존에 등록된 ${cat} 자산의 데이터는 유지되며, 화면 표기만 사라집니다)`)) {
+                const pwd = prompt("장치 종류를 삭제하려면 관리자 비밀번호를 입력하세요:");
+                if (pwd === '1234') {
+                    currentCategories.splice(idx, 1);
+                    if (currentTypeFilter === cat) currentTypeFilter = 'all'; // 삭제된 카테고리가 필터 중이라면 리셋
+                    set(ref(db, 'sd_card_categories'), currentCategories).then(() => {
+                        renderCategoryManager();
+                    });
+                } else if (pwd !== null) { 
+                    alert("비밀번호가 틀렸습니다."); 
+                }
+            }
+        };
+
         function saveToFirebase() { set(ref(db, 'sd_card_ledger'), allRows).catch(err => console.error(err)); }
 
-        // [안전장치 추가] 레거시(구버전) 이력 데이터 호환 처리 및 전후 정보 기록
         window.addHistoryLog = function(cardId, prevStatus, nextStatus, prevManager, nextManager, prevLocation, nextLocation, date) {
             actionHistory.unshift({ 
                 time: new Date().toLocaleString(), 
@@ -497,11 +601,10 @@
             set(ref(db, 'sd_card_history'), actionHistory).catch(err => console.error(err));
         }
 
-        function renderAll() { updateMetrics(); applyFilters(); }
-
-        function updateMetrics() {
+        // [수정] 통계 연산이 현재 화면에 필터링된 데이터(배열)를 기준으로 작동하도록 변경
+        function updateMetrics(rowsToCount) {
             let available = 0, inUse = 0, faulty = 0, lost = 0;
-            allRows.forEach(row => {
+            rowsToCount.forEach(row => {
                 const status = (row[5] || '').trim();
                 if (status.includes('분실')) lost++;
                 else if (status.includes('가능') || status.includes('여유')) available++;
@@ -509,7 +612,7 @@
                 else if (status.includes('불량')) faulty++;
                 else available++;
             });
-            document.getElementById('stat-total').innerText = allRows.length;
+            document.getElementById('stat-total').innerText = rowsToCount.length;
             document.getElementById('stat-available').innerText = available;
             document.getElementById('stat-inuse').innerText = inUse;
             document.getElementById('stat-faulty').innerText = faulty;
@@ -537,7 +640,8 @@
 
         window.setTypeFilter = function(type) {
             currentTypeFilter = type;
-            ['all', 'MicroSD', 'HDD', 'USB', '기타'].forEach(t => {
+            const allTypes = ['all', ...currentCategories];
+            allTypes.forEach(t => {
                 const btn = document.getElementById(`type-btn-${t}`);
                 if (btn) btn.className = (t === type) ? 'px-3 py-1.5 rounded-lg bg-white text-slate-900 font-semibold shadow-sm transition whitespace-nowrap' : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition whitespace-nowrap';
             }); applyFilters();
@@ -545,7 +649,10 @@
 
         window.resetFilters = function() {
             document.getElementById('search-input').value = '';
-            window.setStatusFilter('all'); window.setTypeFilter('all');
+            currentStatusFilter = 'all'; 
+            currentTypeFilter = 'all';
+            setStatusFilter('all'); 
+            setTypeFilter('all');
         };
 
         window.sortTable = function(colIndex) {
@@ -568,9 +675,13 @@
                 else if (currentStatusFilter === '분실') matchesStatus = status.includes('분실');
                 const type = (row[1] || '').trim();
                 let matchesType = true;
-                if (currentTypeFilter !== 'all') matchesType = type.includes(currentTypeFilter);
+                if (currentTypeFilter !== 'all') matchesType = type === currentTypeFilter;
                 return matchesSearch && matchesStatus && matchesType;
             });
+
+            // [수정] 필터링이 완료된 목록(filtered)을 기준으로 상단 통계 숫자 업데이트
+            updateMetrics(filtered.map(f => f.row));
+
             if (currentSortColumn !== null) {
                 filtered.sort((a, b) => {
                     let vA = String(a.row[currentSortColumn] || '').toLowerCase(); let vB = String(b.row[currentSortColumn] || '').toLowerCase();
@@ -615,7 +726,6 @@
             });
         }
 
-        /* 1. 상태 변경 전용 모달 (좌우 비교형 최근 히스토리 렌더링) */
         window.openActionModal = function(index) {
             const row = allRows[index]; document.getElementById('action-row-id').value = index;
             document.getElementById('action-device-info').innerText = `[${row[0]}] ${row[1]} - ${row[2]} (${row[3]})`;
@@ -661,10 +771,9 @@
             
             allRows[index][5] = status; allRows[index][6] = loc; allRows[index][7] = manager; allRows[index][8] = dateStr;
             addHistoryLog(allRows[index][0], prevStatus, status, prevManager, manager, prevLocation, loc, dateStr); 
-            saveToFirebase(); renderAll(); closeModal();
+            saveToFirebase(); applyFilters(); closeModal();
         };
 
-        // 상태별 배지 디자인
         function getStatusBadgeStyle(status) {
             if (!status) return 'bg-slate-50 text-slate-700 border-slate-200';
             if (status.includes('분실')) return 'bg-purple-50 text-purple-700 border-purple-200';
@@ -673,36 +782,24 @@
             return 'bg-emerald-50 text-emerald-700 border-emerald-200';
         }
 
-        // [개선] 변경 전 ➡️ 변경 후 (상태, 담당자, 위치, 날짜) 좌우 비교 HTML 생성기
         function buildComparisonCard(h, showCardId = false) {
-            // 구버전 호환 데이터 처리
-            const pStatus = h.prevStatus || '사용가능';
-            const nStatus = h.nextStatus || h.action || '사용가능';
-            const pMgr = h.prevManager || '-';
-            const nMgr = h.manager || h.nextManager || '-';
-            const pLoc = h.prevLocation || '-';
-            const nLoc = h.location || h.nextLocation || '-';
+            const pStatus = h.prevStatus || '사용가능'; const nStatus = h.nextStatus || h.action || '사용가능';
+            const pMgr = h.prevManager || '-'; const nMgr = h.manager || h.nextManager || '-';
+            const pLoc = h.prevLocation || '-'; const nLoc = h.location || h.nextLocation || '-';
             const timeStr = h.time || h.date || '';
-
-            const pBadge = getStatusBadgeStyle(pStatus);
-            const nBadge = getStatusBadgeStyle(nStatus);
+            const pBadge = getStatusBadgeStyle(pStatus); const nBadge = getStatusBadgeStyle(nStatus);
 
             return `
                 <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs space-y-2">
                     ${showCardId ? `<div class="font-bold text-slate-800 border-b border-slate-100 pb-1 flex justify-between items-center"><span>[${h.cardId}] 자산 변경</span><span class="text-[10px] text-slate-400">${timeStr}</span></div>` : ''}
                     <div class="grid grid-cols-[1fr,auto,1fr] items-center gap-2 text-[11px]">
-                        <!-- 변경 전 (Left) -->
                         <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-1">
                             <div class="text-[10px] font-semibold text-slate-400">변경 전</div>
                             <div>상태: <span class="px-1.5 py-0.5 rounded font-bold border ${pBadge}">${pStatus}</span></div>
                             <div class="truncate text-slate-600">담당: ${pMgr}</div>
                             <div class="truncate text-slate-600">위치: ${pLoc}</div>
                         </div>
-                        
-                        <!-- 화살표 아이콘 -->
                         <div class="text-blue-500 font-bold px-1"><i class="fa-solid fa-arrow-right-long"></i></div>
-
-                        <!-- 변경 후 (Right) -->
                         <div class="bg-blue-50/40 p-2 rounded-lg border border-blue-100 space-y-1">
                             <div class="text-[10px] font-semibold text-blue-500">변경 후</div>
                             <div>상태: <span class="px-1.5 py-0.5 rounded font-bold border ${nBadge}">${nStatus}</span></div>
@@ -715,7 +812,6 @@
             `;
         }
 
-        /* 2. 관리자 모드: 전체 리스트 */
         window.openAdminModal = function() {
             const pwd = prompt("자산 정보를 수정하거나 삭제하려면 관리자 비밀번호를 입력하세요:");
             if (pwd === '1234') { 
@@ -737,7 +833,7 @@
 
             allRows.forEach((row, i) => {
                 const textMatch = !q || row.some(cell => String(cell).toLowerCase().includes(q));
-                const typeMatch = (typeFilter === 'all' || row[1].includes(typeFilter));
+                const typeMatch = (typeFilter === 'all' || row[1] === typeFilter);
                 
                 if (textMatch && typeMatch) {
                     let badge = getStatusBadgeStyle(row[5]);
@@ -787,9 +883,7 @@
             let updateCount = 0;
             selectedIdx.forEach(idx => {
                 let updated = false;
-                const prevStatus = allRows[idx][5];
-                const prevManager = allRows[idx][7];
-                const prevLocation = allRows[idx][6];
+                const prevStatus = allRows[idx][5]; const prevManager = allRows[idx][7]; const prevLocation = allRows[idx][6];
 
                 if(newType !== '') { allRows[idx][1] = newType; updated = true; }
                 if(newCap !== '') { allRows[idx][3] = newCap; updated = true; }
@@ -808,7 +902,7 @@
                 if(updated) { allRows[idx][8] = newDate; updateCount++; }
             });
 
-            if (updateCount > 0) { saveToFirebase(); renderAll(); renderAdminList(); }
+            if (updateCount > 0) { saveToFirebase(); applyFilters(); renderAdminList(); }
             closeBulkEditModal();
         };
 
@@ -825,113 +919,71 @@
             allRows[idx][0] = document.getElementById('core-id').value; allRows[idx][1] = document.getElementById('core-type').value;
             allRows[idx][2] = document.getElementById('core-model').value; allRows[idx][3] = document.getElementById('core-capacity').value;
             allRows[idx][4] = document.getElementById('core-serial').value;
-            saveToFirebase(); renderAll(); renderAdminList(); closeCoreEditModal();
+            saveToFirebase(); applyFilters(); renderAdminList(); closeCoreEditModal();
         };
 
         window.deleteRow = function(index) {
             if (confirm(`정말 [${allRows[index][0]}] 장치를 영구 삭제하시겠습니까?`)) {
-                allRows.splice(index, 1); saveToFirebase(); renderAll(); renderAdminList(); 
+                allRows.splice(index, 1); saveToFirebase(); applyFilters(); renderAdminList(); 
             }
         };
 
-        /* [개선] 상단 전체 이력 모달 및 검색 필터링 (좌우 비교형 뷰 적용) */
         window.openHistoryModal = function() {
-            document.getElementById('history-search-input').value = '';
-            renderHistoryList();
+            document.getElementById('history-search-input').value = ''; renderHistoryList();
             document.getElementById('history-modal').classList.remove('hidden');
         };
         window.closeHistoryModal = function() { document.getElementById('history-modal').classList.add('hidden'); };
 
         window.renderHistoryList = function() {
             const query = document.getElementById('history-search-input').value.toLowerCase().trim();
-            const container = document.getElementById('history-list-container'); 
-            container.innerHTML = '';
-
+            const container = document.getElementById('history-list-container'); container.innerHTML = '';
             const filteredHistory = actionHistory.filter(h => {
                 if (!query) return true;
-                return (h.cardId && h.cardId.toLowerCase().includes(query)) ||
-                       (h.manager && h.manager.toLowerCase().includes(query)) ||
-                       (h.prevManager && h.prevManager.toLowerCase().includes(query)) ||
-                       (h.prevStatus && h.prevStatus.toLowerCase().includes(query)) ||
-                       (h.nextStatus && h.nextStatus.toLowerCase().includes(query)) ||
-                       (h.location && h.location.toLowerCase().includes(query)) ||
-                       (h.prevLocation && h.prevLocation.toLowerCase().includes(query)) ||
-                       (h.time && h.time.toLowerCase().includes(query));
+                return (h.cardId && h.cardId.toLowerCase().includes(query)) || (h.manager && h.manager.toLowerCase().includes(query)) ||
+                       (h.prevManager && h.prevManager.toLowerCase().includes(query)) || (h.prevStatus && h.prevStatus.toLowerCase().includes(query)) ||
+                       (h.nextStatus && h.nextStatus.toLowerCase().includes(query)) || (h.location && h.location.toLowerCase().includes(query)) ||
+                       (h.prevLocation && h.prevLocation.toLowerCase().includes(query)) || (h.time && h.time.toLowerCase().includes(query));
             });
-
-            if(filteredHistory.length === 0) {
-                container.innerHTML = `<div class="text-center text-slate-400 py-6">조건과 일치하는 이력이 없습니다.</div>`;
-                return;
-            }
-
-            filteredHistory.forEach(h => {
-                container.innerHTML += buildComparisonCard(h, true);
-            });
+            if(filteredHistory.length === 0) { container.innerHTML = `<div class="text-center text-slate-400 py-6">조건과 일치하는 이력이 없습니다.</div>`; return; }
+            filteredHistory.forEach(h => { container.innerHTML += buildComparisonCard(h, true); });
         };
 
-        window.openAddModal = function() { document.getElementById('add-id').value = `ST-0${allRows.length + 1}`; document.getElementById('add-modal').classList.remove('hidden'); };
+        window.openAddModal = function() { 
+            document.getElementById('add-id').value = `ST-0${allRows.length + 1}`; 
+            document.getElementById('add-modal').classList.remove('hidden'); 
+        };
         window.closeAddModal = function() { document.getElementById('add-modal').classList.add('hidden'); };
 
         window.handleAddNewCard = function(e) {
             e.preventDefault();
-            const newId = document.getElementById('add-id').value;
-            const newStatus = document.getElementById('add-status').value;
-            const newManager = document.getElementById('add-manager').value || '-';
-            const newLoc = document.getElementById('add-location').value || '-';
+            const newId = document.getElementById('add-id').value; const newStatus = document.getElementById('add-status').value;
+            const newManager = document.getElementById('add-manager').value || '-'; const newLoc = document.getElementById('add-location').value || '-';
             const today = new Date().toISOString().split('T')[0];
-
             allRows.unshift([newId, document.getElementById('add-type').value, document.getElementById('add-model').value, document.getElementById('add-capacity').value, document.getElementById('add-serial').value, newStatus, newLoc, newManager, today]);
             addHistoryLog(newId, '신규등록', newStatus, '-', newManager, '-', newLoc, today);
-            saveToFirebase(); renderAll(); closeAddModal();
+            saveToFirebase(); applyFilters(); closeAddModal();
         };
 
-        /* ExcelJS를 이용한 데이터 유효성 검사 포함 템플릿 다운로드 */
         window.downloadTemplate = async function() {
-            const workbook = new ExcelJS.Workbook();
-            const sheet = workbook.addWorksheet("Template");
-
+            const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet("Template");
             sheet.columns = [
-                { header: "관리번호", key: "id", width: 15 },
-                { header: "장치 종류", key: "type", width: 15 },
-                { header: "모델명", key: "model", width: 20 },
-                { header: "용량", key: "capacity", width: 12 },
-                { header: "시리얼 넘버", key: "serial", width: 20 },
-                { header: "상태", key: "status", width: 15 },
-                { header: "장착 장비", key: "location", width: 20 },
-                { header: "담당자", key: "manager", width: 15 },
-                { header: "업데이트 날짜", key: "date", width: 15 }
+                { header: "관리번호", key: "id", width: 15 }, { header: "장치 종류", key: "type", width: 15 }, { header: "모델명", key: "model", width: 20 },
+                { header: "용량", key: "capacity", width: 12 }, { header: "시리얼 넘버", key: "serial", width: 20 }, { header: "상태", key: "status", width: 15 },
+                { header: "장착 장비", key: "location", width: 20 }, { header: "담당자", key: "manager", width: 15 }, { header: "업데이트 날짜", key: "date", width: 15 }
             ];
-
-            sheet.getRow(1).font = { bold: true };
-            sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
-
+            sheet.getRow(1).font = { bold: true }; sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
             sheet.addRow({
-                id: "ST-101", type: "HDD", model: "WD Blue", capacity: "1TB", 
-                serial: "WD-123", status: "사용가능", location: "-", 
-                manager: "-", date: new Date().toISOString().split('T')[0]
+                id: "ST-101", type: currentCategories[0] || "MicroSD", model: "WD Blue", capacity: "1TB", 
+                serial: "WD-123", status: "사용가능", location: "-", manager: "-", date: new Date().toISOString().split('T')[0]
             });
-
             for(let i = 2; i <= 100; i++) {
-                sheet.getCell(`B${i}`).dataValidation = {
-                    type: 'list',
-                    allowBlank: true,
-                    formulae: ['"MicroSD,USB 메모리,HDD,기타"']
-                };
-                sheet.getCell(`F${i}`).dataValidation = {
-                    type: 'list',
-                    allowBlank: true,
-                    formulae: ['"사용가능,사용중,불량,분실"']
-                };
+                sheet.getCell(`B${i}`).dataValidation = { type: 'list', allowBlank: true, formulae: [`"${currentCategories.join(',')}"`] };
+                sheet.getCell(`F${i}`).dataValidation = { type: 'list', allowBlank: true, formulae: ['"사용가능,사용중,불량,분실"'] };
             }
-
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "Storage_Template.xlsx";
-            a.click();
-            window.URL.revokeObjectURL(url);
+            const a = document.createElement("a"); a.href = url; a.download = "Storage_Template.xlsx"; a.click(); window.URL.revokeObjectURL(url);
         };
 
         window.exportToExcel = function() {
@@ -947,8 +999,8 @@
                     const data = new Uint8Array(evt.target.result); const wb = XLSX.read(data, {type: 'array'}); const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                     if(json.length===0) return alert("엑셀 파일에 데이터가 없습니다.");
                     if(confirm(`총 ${json.length}개의 데이터를 불러왔습니다. 기존 장부를 덮어씌우시겠습니까?`)) {
-                        allRows = json.map(r => [r["관리번호"]||"ST-00",r["장치 종류"]||"기타",r["모델명"]||"-",r["용량"]||"-",r["시리얼 넘버"]||"",r["상태"]||"사용가능",r["장착 장비"]||"-",r["담당자"]||"-",r["업데이트 날짜"]||new Date().toISOString().split('T')[0]]);
-                        saveToFirebase(); renderAll(); alert("성공적으로 업로드되었습니다!");
+                        allRows = json.map(r => [r["관리번호"]||"ST-00",r["장치 종류"]||(currentCategories[0]||"기타"),r["모델명"]||"-",r["용량"]||"-",r["시리얼 넘버"]||"",r["상태"]||"사용가능",r["장착 장비"]||"-",r["담당자"]||"-",r["업데이트 날짜"]||new Date().toISOString().split('T')[0]]);
+                        saveToFirebase(); applyFilters(); alert("성공적으로 업로드되었습니다!");
                     }
                 } catch(err) { alert("엑셀 파싱 오류가 발생했습니다."); }
                 e.target.value = "";

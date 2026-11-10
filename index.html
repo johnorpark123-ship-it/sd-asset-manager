@@ -127,20 +127,31 @@
         </div>
     </main>
 
-    <!-- 1. 메인 리스트용: 대여/반납 전용 모달 -->
+    <!-- 1. 메인 리스트용: 대여/반납 전용 모달 (개별 장치 최근 히스토리 좌우 비교 뷰) -->
     <div id="action-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 border border-slate-100">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-100 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
                 <h3 class="font-bold text-slate-900 text-base">장치 대여 및 상태 업데이트</h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <form onsubmit="handleActionSubmit(event)" class="space-y-4">
+            <form onsubmit="handleActionSubmit(event)" class="space-y-4 overflow-y-auto flex-1 pr-1">
                 <input type="hidden" id="action-row-id">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <label class="block text-[11px] font-semibold text-slate-500 mb-0.5">업데이트 대상 장치</label>
                     <div id="action-device-info" class="text-sm font-bold text-slate-800"></div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+
+                <!-- [개선] 해당 장치 최근 10개 히스토리 (좌우 비교형) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
+                        <span><i class="fa-solid fa-clock-rotate-left text-amber-600 mr-1"></i>해당 장치 최근 변경 이력 (최근 10개)</span>
+                    </label>
+                    <div id="action-device-history" class="bg-slate-50 rounded-xl border border-slate-200 p-3 max-h-44 overflow-y-auto text-xs space-y-2 divide-y divide-slate-200/60">
+                        <!-- JS 렌더링 -->
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">상태 선택</label>
                         <select id="action-status" onchange="onActionStatusChange()" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm">
@@ -165,7 +176,7 @@
                         <input type="date" id="action-date" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer shadow-sm">
                     </div>
                 </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100 flex-shrink-0">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">취소</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">상태 반영</button>
                 </div>
@@ -173,7 +184,7 @@
         </div>
     </div>
 
-    <!-- 2. 관리자 모드: 전체 자산 리스트 팝업 (내부 필터 및 일괄 수정 추가) -->
+    <!-- 2. 관리자 모드: 전체 자산 리스트 -->
     <div id="admin-list-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6 space-y-4 border border-slate-100 flex flex-col max-h-[85vh]">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
@@ -214,9 +225,7 @@
                             <th class="px-4 py-2.5 text-right border-b">개별 관리</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-list-body" class="divide-y divide-slate-100 text-sm text-slate-700">
-                        <!-- JS Render -->
-                    </tbody>
+                    <tbody id="admin-list-body" class="divide-y divide-slate-100 text-sm text-slate-700"></tbody>
                 </table>
             </div>
             <div class="flex justify-end pt-2 flex-shrink-0">
@@ -225,7 +234,7 @@
         </div>
     </div>
 
-    <!-- 3. 관리자 모드: 선택 자산 벌크(일괄) 수정 모달 -->
+    <!-- 3. 관리자 모드: 선택 자산 일괄 수정 모달 -->
     <div id="bulk-edit-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 border border-slate-100">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -393,18 +402,26 @@
         </div>
     </div>
 
-    <!-- 이력 모달 -->
+    <!-- [개선] 상단 전체 이력 모달 (좌우 비교형 UI 및 검색 필터 적용) -->
     <div id="history-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 border border-slate-100">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-6 space-y-4 border border-slate-100 flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
                 <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
                     <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
-                    <span>장치 상태 변경 이력</span>
+                    <span>장치 상태 변경 전체 이력</span>
                 </h3>
                 <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="max-h-72 overflow-y-auto space-y-2 text-xs divide-y divide-slate-100 bg-slate-50 p-3 rounded-xl border" id="history-list-container"></div>
-            <div class="flex justify-end pt-2">
+            
+            <div class="relative flex-shrink-0">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="history-search-input" oninput="renderHistoryList()" placeholder="관리번호, 담당자, 위치 또는 상태 검색..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition">
+            </div>
+
+            <div class="max-h-[50vh] overflow-y-auto space-y-2 text-xs divide-y divide-slate-100 bg-slate-50 p-3 rounded-xl border flex-1" id="history-list-container">
+                <!-- JS Render -->
+            </div>
+            <div class="flex justify-end pt-2 flex-shrink-0">
                 <button onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">닫기</button>
             </div>
         </div>
@@ -430,7 +447,7 @@
 
         let allRows = [];
         let actionHistory = [];
-        const MAX_HISTORY = 50;
+        const MAX_HISTORY = 100;
         
         let headers = ["관리번호", "장치 종류", "모델명", "용량", "시리얼 넘버", "상태", "장착 장비", "담당자", "업데이트 날짜"];
         
@@ -463,8 +480,19 @@
 
         function saveToFirebase() { set(ref(db, 'sd_card_ledger'), allRows).catch(err => console.error(err)); }
 
-        function addHistoryLog(cardId, action, manager, date) {
-            actionHistory.unshift({ time: new Date().toLocaleString(), cardId, action, manager, date });
+        // [안전장치 추가] 레거시(구버전) 이력 데이터 호환 처리 및 전후 정보 기록
+        window.addHistoryLog = function(cardId, prevStatus, nextStatus, prevManager, nextManager, prevLocation, nextLocation, date) {
+            actionHistory.unshift({ 
+                time: new Date().toLocaleString(), 
+                cardId, 
+                prevStatus: prevStatus || '사용가능', 
+                nextStatus: nextStatus || '사용가능', 
+                prevManager: prevManager || '-', 
+                nextManager: nextManager || '-', 
+                prevLocation: prevLocation || '-', 
+                nextLocation: nextLocation || '-', 
+                date 
+            });
             if (actionHistory.length > MAX_HISTORY) actionHistory.pop();
             set(ref(db, 'sd_card_history'), actionHistory).catch(err => console.error(err));
         }
@@ -576,10 +604,7 @@
                     let td = document.createElement('td'); td.className = 'px-6 py-4 whitespace-nowrap text-slate-700 text-xs sm:text-sm';
                     let val = row[colIdx] || '';
                     if (colIdx === 5) {
-                        let badge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                        if (val.includes('분실')) badge = 'bg-purple-50 text-purple-700 border-purple-200';
-                        else if (val.includes('사용중')) badge = 'bg-amber-50 text-amber-700 border-amber-200';
-                        else if (val.includes('불량')) badge = 'bg-rose-50 text-rose-700 border-rose-200';
+                        let badge = getStatusBadgeStyle(val);
                         td.innerHTML = `<span class="px-2.5 py-1 rounded-lg text-xs font-medium border ${badge}">${val}</span>`;
                     } else { td.innerText = val; }
                     tr.appendChild(td);
@@ -590,17 +615,30 @@
             });
         }
 
-        /* 1. 상태 변경 전용 */
+        /* 1. 상태 변경 전용 모달 (좌우 비교형 최근 히스토리 렌더링) */
         window.openActionModal = function(index) {
             const row = allRows[index]; document.getElementById('action-row-id').value = index;
             document.getElementById('action-device-info').innerText = `[${row[0]}] ${row[1]} - ${row[2]} (${row[3]})`;
             document.getElementById('action-status').value = row[5] || '사용가능'; document.getElementById('action-location').value = row[6] || '';
             document.getElementById('action-manager').value = row[7] || ''; document.getElementById('action-date').value = row[8] || new Date().toISOString().split('T')[0];
+            
+            const historyContainer = document.getElementById('action-device-history');
+            historyContainer.innerHTML = '';
+            const cardHistories = actionHistory.filter(h => h.cardId === row[0]).slice(0, 10);
+            
+            if (cardHistories.length === 0) {
+                historyContainer.innerHTML = `<div class="text-center text-slate-400 py-2">해당 장치의 변경 이력이 없습니다.</div>`;
+            } else {
+                cardHistories.forEach(h => {
+                    historyContainer.innerHTML += buildComparisonCard(h, false);
+                });
+            }
+
             document.getElementById('action-modal').classList.remove('hidden');
         };
+        
         window.closeModal = function() { document.getElementById('action-modal').classList.add('hidden'); };
         
-        /* [수정됨] 상태를 '사용가능'으로 바꾸면 매니저와 위치 모두 하이픈(-)으로 처리 */
         window.onActionStatusChange = function() {
             if (document.getElementById('action-status').value === '사용가능') {
                 document.getElementById('action-manager').value = '-';
@@ -612,13 +650,72 @@
         window.handleActionSubmit = function(e) {
             e.preventDefault();
             const index = parseInt(document.getElementById('action-row-id').value);
-            const status = document.getElementById('action-status').value; const manager = document.getElementById('action-manager').value;
-            const loc = document.getElementById('action-location').value; const dateStr = document.getElementById('action-date').value;
+            const prevStatus = allRows[index][5];
+            const prevManager = allRows[index][7];
+            const prevLocation = allRows[index][6];
+
+            const status = document.getElementById('action-status').value; 
+            const manager = document.getElementById('action-manager').value;
+            const loc = document.getElementById('action-location').value; 
+            const dateStr = document.getElementById('action-date').value;
+            
             allRows[index][5] = status; allRows[index][6] = loc; allRows[index][7] = manager; allRows[index][8] = dateStr;
-            addHistoryLog(allRows[index][0], status, manager, dateStr); saveToFirebase(); renderAll(); closeModal();
+            addHistoryLog(allRows[index][0], prevStatus, status, prevManager, manager, prevLocation, loc, dateStr); 
+            saveToFirebase(); renderAll(); closeModal();
         };
 
-        /* 2. 관리자 모드: 전체 리스트 및 검색/필터 적용 */
+        // 상태별 배지 디자인
+        function getStatusBadgeStyle(status) {
+            if (!status) return 'bg-slate-50 text-slate-700 border-slate-200';
+            if (status.includes('분실')) return 'bg-purple-50 text-purple-700 border-purple-200';
+            if (status.includes('사용중') || status.includes('대여')) return 'bg-amber-50 text-amber-700 border-amber-200';
+            if (status.includes('불량')) return 'bg-rose-50 text-rose-700 border-rose-200';
+            return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        }
+
+        // [개선] 변경 전 ➡️ 변경 후 (상태, 담당자, 위치, 날짜) 좌우 비교 HTML 생성기
+        function buildComparisonCard(h, showCardId = false) {
+            // 구버전 호환 데이터 처리
+            const pStatus = h.prevStatus || '사용가능';
+            const nStatus = h.nextStatus || h.action || '사용가능';
+            const pMgr = h.prevManager || '-';
+            const nMgr = h.manager || h.nextManager || '-';
+            const pLoc = h.prevLocation || '-';
+            const nLoc = h.location || h.nextLocation || '-';
+            const timeStr = h.time || h.date || '';
+
+            const pBadge = getStatusBadgeStyle(pStatus);
+            const nBadge = getStatusBadgeStyle(nStatus);
+
+            return `
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs space-y-2">
+                    ${showCardId ? `<div class="font-bold text-slate-800 border-b border-slate-100 pb-1 flex justify-between items-center"><span>[${h.cardId}] 자산 변경</span><span class="text-[10px] text-slate-400">${timeStr}</span></div>` : ''}
+                    <div class="grid grid-cols-[1fr,auto,1fr] items-center gap-2 text-[11px]">
+                        <!-- 변경 전 (Left) -->
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 space-y-1">
+                            <div class="text-[10px] font-semibold text-slate-400">변경 전</div>
+                            <div>상태: <span class="px-1.5 py-0.5 rounded font-bold border ${pBadge}">${pStatus}</span></div>
+                            <div class="truncate text-slate-600">담당: ${pMgr}</div>
+                            <div class="truncate text-slate-600">위치: ${pLoc}</div>
+                        </div>
+                        
+                        <!-- 화살표 아이콘 -->
+                        <div class="text-blue-500 font-bold px-1"><i class="fa-solid fa-arrow-right-long"></i></div>
+
+                        <!-- 변경 후 (Right) -->
+                        <div class="bg-blue-50/40 p-2 rounded-lg border border-blue-100 space-y-1">
+                            <div class="text-[10px] font-semibold text-blue-500">변경 후</div>
+                            <div>상태: <span class="px-1.5 py-0.5 rounded font-bold border ${nBadge}">${nStatus}</span></div>
+                            <div class="truncate text-slate-800 font-medium">담당: ${nMgr}</div>
+                            <div class="truncate text-slate-800 font-medium">위치: ${nLoc}</div>
+                        </div>
+                    </div>
+                    ${!showCardId ? `<div class="text-[10px] text-slate-400 text-right">${timeStr}</div>` : ''}
+                </div>
+            `;
+        }
+
+        /* 2. 관리자 모드: 전체 리스트 */
         window.openAdminModal = function() {
             const pwd = prompt("자산 정보를 수정하거나 삭제하려면 관리자 비밀번호를 입력하세요:");
             if (pwd === '1234') { 
@@ -643,11 +740,7 @@
                 const typeMatch = (typeFilter === 'all' || row[1].includes(typeFilter));
                 
                 if (textMatch && typeMatch) {
-                    let badge = 'text-emerald-600 bg-emerald-50';
-                    if (row[5].includes('분실')) badge = 'text-purple-600 bg-purple-50';
-                    else if (row[5].includes('사용중')) badge = 'text-amber-600 bg-amber-50';
-                    else if (row[5].includes('불량')) badge = 'text-rose-600 bg-rose-50';
-                    
+                    let badge = getStatusBadgeStyle(row[5]);
                     container.innerHTML += `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-50 last:border-0">
                             <td class="px-3 py-3 text-center"><input type="checkbox" value="${i}" class="admin-chk rounded border-slate-300"></td>
@@ -665,16 +758,13 @@
             });
         };
 
-        /* 3. 체크박스 일괄 제어 및 벌크 수정 로직 */
         window.toggleAllAdmin = function(source) {
-            const checkboxes = document.querySelectorAll('.admin-chk');
-            checkboxes.forEach(cb => cb.checked = source.checked);
+            document.querySelectorAll('.admin-chk').forEach(cb => cb.checked = source.checked);
         };
 
         window.openBulkEditModal = function() {
             const selected = Array.from(document.querySelectorAll('.admin-chk:checked')).map(cb => cb.value);
             if(selected.length === 0) return alert("일괄 수정할 장치를 하나 이상 선택해주세요.");
-            
             document.getElementById('bulk-type').value = ''; 
             document.getElementById('bulk-status').value = ''; 
             document.getElementById('bulk-manager').value = ''; 
@@ -697,19 +787,22 @@
             let updateCount = 0;
             selectedIdx.forEach(idx => {
                 let updated = false;
+                const prevStatus = allRows[idx][5];
+                const prevManager = allRows[idx][7];
+                const prevLocation = allRows[idx][6];
+
                 if(newType !== '') { allRows[idx][1] = newType; updated = true; }
                 if(newCap !== '') { allRows[idx][3] = newCap; updated = true; }
                 if(newManager !== '') { allRows[idx][7] = newManager; updated = true; }
                 if(newLoc !== '') { allRows[idx][6] = newLoc; updated = true; }
                 
-                /* [수정됨] 일괄수정에서도 상태가 '사용가능'으로 변경되면 위치도 비우기 적용 */
                 if(newStatus !== '') { 
                     allRows[idx][5] = newStatus; 
                     if(newStatus === '사용가능') {
                         if(newManager === '') allRows[idx][7] = '-'; 
                         if(newLoc === '') allRows[idx][6] = '-'; 
                     }
-                    addHistoryLog(allRows[idx][0], "일괄상태: " + newStatus, allRows[idx][7], newDate);
+                    addHistoryLog(allRows[idx][0], prevStatus, newStatus, prevManager, allRows[idx][7], prevLocation, allRows[idx][6], newDate);
                     updated = true;
                 }
                 if(updated) { allRows[idx][8] = newDate; updateCount++; }
@@ -719,7 +812,6 @@
             closeBulkEditModal();
         };
 
-        /* 4. 개별 기본정보 수정 */
         window.openCoreEditModal = function(index) {
             const row = allRows[index]; document.getElementById('core-edit-index').value = index;
             document.getElementById('core-id').value = row[0]; document.getElementById('core-type').value = row[1];
@@ -742,30 +834,62 @@
             }
         };
 
-        /* 부가 기능 */
+        /* [개선] 상단 전체 이력 모달 및 검색 필터링 (좌우 비교형 뷰 적용) */
         window.openHistoryModal = function() {
-            const container = document.getElementById('history-list-container'); container.innerHTML = '';
-            if(actionHistory.length === 0) container.innerHTML = `<div class="text-center text-slate-400 py-4">기록된 이력이 없습니다.</div>`;
-            else actionHistory.forEach(h => { container.innerHTML += `<div class="py-1.5 flex justify-between"><div><span class="font-bold text-slate-800">[${h.cardId}]</span> ${h.action} (담당: ${h.manager})</div><div class="text-[11px] text-slate-400">${h.time}</div></div>`; });
+            document.getElementById('history-search-input').value = '';
+            renderHistoryList();
             document.getElementById('history-modal').classList.remove('hidden');
         };
         window.closeHistoryModal = function() { document.getElementById('history-modal').classList.add('hidden'); };
+
+        window.renderHistoryList = function() {
+            const query = document.getElementById('history-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('history-list-container'); 
+            container.innerHTML = '';
+
+            const filteredHistory = actionHistory.filter(h => {
+                if (!query) return true;
+                return (h.cardId && h.cardId.toLowerCase().includes(query)) ||
+                       (h.manager && h.manager.toLowerCase().includes(query)) ||
+                       (h.prevManager && h.prevManager.toLowerCase().includes(query)) ||
+                       (h.prevStatus && h.prevStatus.toLowerCase().includes(query)) ||
+                       (h.nextStatus && h.nextStatus.toLowerCase().includes(query)) ||
+                       (h.location && h.location.toLowerCase().includes(query)) ||
+                       (h.prevLocation && h.prevLocation.toLowerCase().includes(query)) ||
+                       (h.time && h.time.toLowerCase().includes(query));
+            });
+
+            if(filteredHistory.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-400 py-6">조건과 일치하는 이력이 없습니다.</div>`;
+                return;
+            }
+
+            filteredHistory.forEach(h => {
+                container.innerHTML += buildComparisonCard(h, true);
+            });
+        };
 
         window.openAddModal = function() { document.getElementById('add-id').value = `ST-0${allRows.length + 1}`; document.getElementById('add-modal').classList.remove('hidden'); };
         window.closeAddModal = function() { document.getElementById('add-modal').classList.add('hidden'); };
 
         window.handleAddNewCard = function(e) {
             e.preventDefault();
-            allRows.unshift([document.getElementById('add-id').value, document.getElementById('add-type').value, document.getElementById('add-model').value, document.getElementById('add-capacity').value, document.getElementById('add-serial').value, document.getElementById('add-status').value, document.getElementById('add-location').value, document.getElementById('add-manager').value, new Date().toISOString().split('T')[0]]);
+            const newId = document.getElementById('add-id').value;
+            const newStatus = document.getElementById('add-status').value;
+            const newManager = document.getElementById('add-manager').value || '-';
+            const newLoc = document.getElementById('add-location').value || '-';
+            const today = new Date().toISOString().split('T')[0];
+
+            allRows.unshift([newId, document.getElementById('add-type').value, document.getElementById('add-model').value, document.getElementById('add-capacity').value, document.getElementById('add-serial').value, newStatus, newLoc, newManager, today]);
+            addHistoryLog(newId, '신규등록', newStatus, '-', newManager, '-', newLoc, today);
             saveToFirebase(); renderAll(); closeAddModal();
         };
 
-        /* [신규]: ExcelJS를 이용한 데이터 유효성 검사 포함 템플릿 다운로드 */
+        /* ExcelJS를 이용한 데이터 유효성 검사 포함 템플릿 다운로드 */
         window.downloadTemplate = async function() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet("Template");
 
-            // 헤더 설정 (컬럼 너비 지정)
             sheet.columns = [
                 { header: "관리번호", key: "id", width: 15 },
                 { header: "장치 종류", key: "type", width: 15 },
@@ -778,27 +902,21 @@
                 { header: "업데이트 날짜", key: "date", width: 15 }
             ];
 
-            // 헤더 스타일 가독성 높이기
             sheet.getRow(1).font = { bold: true };
             sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
-            // 첫 번째 샘플 데이터 삽입
             sheet.addRow({
                 id: "ST-101", type: "HDD", model: "WD Blue", capacity: "1TB", 
-                serial: "WD-123", status: "사용가능", location: "보관함 1번", 
+                serial: "WD-123", status: "사용가능", location: "-", 
                 manager: "-", date: new Date().toISOString().split('T')[0]
             });
 
-            // 2행부터 100행까지 데이터 유효성 검사(콤보박스 드롭다운) 규칙 일괄 적용
             for(let i = 2; i <= 100; i++) {
-                // B열 (장치 종류)
                 sheet.getCell(`B${i}`).dataValidation = {
                     type: 'list',
                     allowBlank: true,
                     formulae: ['"MicroSD,USB 메모리,HDD,기타"']
                 };
-                
-                // F열 (상태)
                 sheet.getCell(`F${i}`).dataValidation = {
                     type: 'list',
                     allowBlank: true,
@@ -806,7 +924,6 @@
                 };
             }
 
-            // 브라우저에서 파일로 추출하여 다운로드 트리거
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
             const url = window.URL.createObjectURL(blob);
